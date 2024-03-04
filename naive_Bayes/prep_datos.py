@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.impute import SimpleImputer
 from imblearn.over_sampling import SMOTENC
@@ -11,8 +14,7 @@ from sklearn.metrics import accuracy_score, classification_report
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import confusion_matrix
-import matplotlib.pyplot as plt
-import seaborn as sns
+from sklearn.metrics import confusion_matrix
 
 # Variable global para los datos
 mydata = pd.read_csv("../homeLoanAproval.csv")
@@ -152,6 +154,19 @@ def plot_confusion_matrix(y_true, y_pred):
   plt.ylabel('True labels')
   plt.title('Confusion Matrix')
   plt.show()
+  
+
+# Función para pintar el número de aciertos y fallos en un diagrama de barras
+def plot_aciertos_fallos(y_true, y_pred):
+  aciertos = np.sum(y_true == y_pred)
+  fallos = len(y_true) - aciertos
+  etiquetas = ['Aciertos', 'Fallos']
+  valores = [aciertos, fallos]
+  plt.bar(etiquetas, valores, color=['green', 'red'])
+  plt.xlabel('Clasificación')
+  plt.ylabel('Número de muestras')
+  plt.title('Aciertos vs. Fallos')
+  plt.show()
 
 # Función para implementar el clasificador k-NN
 def clasificador_KNN():
@@ -163,6 +178,7 @@ def clasificador_KNN():
   accuracy = accuracy_score(y_test, y_pred)  # Evaluamos el rendimiento del clasificador
   print("Claisificador KNN: \nAccuracy:", accuracy)
   plot_confusion_matrix(y_test, y_pred) # Pintamos la matriz de confusión
+  plot_aciertos_fallos(y_test, y_pred) # Pintamos el número de aciertos y fallos
 
 # FUnción para implementar el clasificador de árbol de clasificación
 def arbol_clasificacion(): 
@@ -192,7 +208,5 @@ def main():
   arbol_clasificacion()
   clasificador_naive_bayes()
 
-  
-  
 
 main(); # Llamamos a la función principal
