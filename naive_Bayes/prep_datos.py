@@ -9,6 +9,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.naive_bayes import GaussianNB
 
 # Variable global para los datos
 mydata = pd.read_csv("../homeLoanAproval.csv")
@@ -163,11 +164,23 @@ def arbol_clasificacion():
   accuracy = accuracy_score(y_test, y_pred) # Evaluamos el rendimiento
   print("Arbol Clasificación: \nAccuracy:", accuracy) 
 
+# Función para implementar el clasificador naive Bayes. Utilizamos la versión que permite utilizar variables categóricas.
+def clasificador_naive_bayes(): 
+  x_numeric = mydata.select_dtypes(include=['float64', 'int64', bool])
+  X_train, X_test, y_train, y_test = division_datos_entrenamiento_prueba(x_numeric) 
+  naive_bayes_classifier = GaussianNB() # Instanciamos el clasificador naive Bayes
+  naive_bayes_classifier.fit(X_train, y_train)
+  y_pred = naive_bayes_classifier.predict(X_test)
+  accuracy = accuracy_score(y_test, y_pred)
+  print("Naive Bayes: \nAccuracy: ", accuracy)
+  
+
 def main(): 
   global mydata
   prepracion_datos()
   clasificador_KNN()
   arbol_clasificacion()
+  clasificador_naive_bayes()
 
   
   
