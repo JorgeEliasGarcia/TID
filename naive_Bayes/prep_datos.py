@@ -10,6 +10,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import GaussianNB
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Variable global para los datos
 mydata = pd.read_csv("../homeLoanAproval.csv")
@@ -40,8 +43,6 @@ def detectar_y_eliminar_outliers(data, contamination = 0.05): # Esperamos que ap
     data_cleaned = data
 
   return data_cleaned
-
-  
 
 
 
@@ -142,6 +143,16 @@ def division_datos_entrenamiento_prueba(data):
   X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)  # Dividimos los datos en conjuntos de entrenamiento y prueba. IMPORTANTE, estamos manteniendo la proporción de clases.
   return X_train, X_test, y_train, y_test
 
+
+# Función para pintar la matriz de confusión
+def plot_confusion_matrix(y_true, y_pred):
+  cm = confusion_matrix(y_true, y_pred)
+  sns.heatmap(cm, annot=True, fmt="d", cmap="Blues")
+  plt.xlabel('Predicted labels')
+  plt.ylabel('True labels')
+  plt.title('Confusion Matrix')
+  plt.show()
+
 # Función para implementar el clasificador k-NN
 def clasificador_KNN():
   x_numeric = mydata.select_dtypes(include=['float64', 'int64', bool]) # Para poder usar este clasificador, no podemos usar variables categóricas, por lo que solo usamos las variables numéricas o boolenas.
@@ -151,8 +162,7 @@ def clasificador_KNN():
   y_pred = knn_classifier.predict(X_test)   # Predecir las etiquetas en el conjunto de prueba
   accuracy = accuracy_score(y_test, y_pred)  # Evaluamos el rendimiento del clasificador
   print("Claisificador KNN: \nAccuracy:", accuracy)
-  # print("Classification Report:")
-  # print(classification_report(y_test, y_pred))
+  plot_confusion_matrix(y_test, y_pred) # Pintamos la matriz de confusión
 
 # FUnción para implementar el clasificador de árbol de clasificación
 def arbol_clasificacion(): 
