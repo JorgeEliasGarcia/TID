@@ -75,7 +75,7 @@ def identificar_variables_validas_para_agrupacion():
 # Hacemos la agrupación en clusters, haciendo uso del algoritmo kMeans. 
 def hacer_agrupacion_clusters(selected_columns):
   grouped_data = mydata[selected_columns]   # Agrupar por las columnas seleccionadas
-  kmeans = KMeans(n_clusters=7, random_state=42)  #  Aplicamos kMeans, usando 15 clusters
+  kmeans = KMeans(n_clusters=8, random_state=42)  #  Aplicamos kMeans, usando 15 clusters
   kmeans.fit(grouped_data)
   mydata['Cluster'] = kmeans.labels_   # Asignamos clusters a cada fila en el DataFrame original
   return grouped_data
@@ -150,51 +150,64 @@ pipeline = ColumnTransformer(
     ], 
 )
 
-# Función para la división de los datos
+
+# Función para la división de los datos en entrenamiento y prueba
 def division_datos_entrenamiento_prueba(): 
-  no_loan_status = mydata.drop("LoanStatus", axis=1)
-  preprocessed_dataset = pipeline.fit_transform(no_loan_status)
-  X_train, X_test, y_train, y_test = train_test_split ( preprocessed_dataset, mydata["LoanStatus"], test_size=0.2, random_state=42 )
-  return X_train, X_test, y_train, y_test
+    no_loan_status = mydata.drop("LoanStatus", axis=1)
+    preprocessed_dataset = pipeline.fit_transform(no_loan_status)
+    X = preprocessed_dataset
+    y = mydata["LoanStatus"]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    return X_train, X_test, y_train, y_test
 
-
-# Función para implementar el clasificador k-NN
+# Función para implementar el clasificador k-NN con validación cruzada
 def clasificador_KNN():
-  X_train, X_test, y_train, y_test = division_datos_entrenamiento_prueba()  # Dividimos los datos en conjuntos de entrenamiento y prueba. IMPORTANTE, estamos manteniendo la proporción de clases. 
-  knn_classifier = KNeighborsClassifier(n_neighbors=10)   # Instanciar el clasificador KNN
-  knn_classifier.fit(X_train, y_train)   # Instanciamos y entrenamos el clasificador KNN
-  y_pred = knn_classifier.predict(X_test)   # Predecir las etiquetas en el conjunto de prueba
-  accuracy = accuracy_score(y_test, y_pred)  # Evaluamos el rendimiento del clasificador
-  print("Claisificador KNN: \nAccuracy:", accuracy)
+    X_train, X_test, y_train, y_test = division_datos_entrenamiento_prueba()  
+    knn_classifier = KNeighborsClassifier(n_neighbors=10)
+    
+    # Validación cruzada con 5 folds
+    accuracy = cross_val_score(knn_classifier, X_train, y_train, cv=5, scoring='accuracy').mean()
+    print("Clasificador KNN - Validación Cruzada - Accuracy Promedio:", accuracy)
+    
+    knn_classifier.fit(X_train, y_train) 
+    y_pred = knn_classifier.predict(X_test)  
+    accuracy_test = accuracy_score(y_test, y_pred) 
+    print("Accuracy en datos de prueba:", accuracy_test)
 
-
-# FUnción para implementar el clasificador de árbol de clasificación
+# Función para implementar el clasificador de árbol de clasificación con validación cruzada
 def arbol_clasificacion(): 
-  X_train, X_test, y_train, y_test = division_datos_entrenamiento_prueba()  # Dividimos los datos en conjuntos de entrenamiento y prueba. IMPORTANTE, estamos manteniendo la proporción de clases.
-  tree_classifier = DecisionTreeClassifier(random_state=42) # Instanciamos el clasificador de árbol de decisión
-  # scores = cross_val_score(tree_classifier, X_train, y_train, cv=5)  # Utilizamos validación cruzada con 5 folds
-  tree_classifier.fit(X_train, y_train) # Entrenamos
-  y_pred = tree_classifier.predict(X_test) # Predecimos
-  accuracy = accuracy_score(y_test, y_pred) # Evaluamos el rendimiento
-  print("Arbol Clasificación: \nAccuracy:", accuracy) 
+    X_train, X_test, y_train, y_test = division_datos_entrenamiento_prueba()
+    tree_classifier = DecisionTreeClassifier(random_state=42)
+    
+    # Validación cruzada con 5 folds
+    accuracy = cross_val_score(tree_classifier, X_train, y_train, cv=5, scoring='accuracy').mean()
+    print("Árbol de Clasificación - Validación Cruzada - Accuracy Promedio:", accuracy)
+    
+    tree_classifier.fit(X_train, y_train)
+    y_pred = tree_classifier.predict(X_test)
+    accuracy_test = accuracy_score(y_test, y_pred)
+    print("Accuracy en datos de prueba:", accuracy_test) 
 
-
-# Función para implementar el clasificador naive Bayes. Utilizamos la versión que permite utilizar variables categóricas.
+# Función para implementar el clasificador naive Bayes con validación cruzada
 def clasificador_naive_bayes(): 
-  X_train, X_test, y_train, y_test = division_datos_entrenamiento_prueba() 
-  naive_bayes_classifier = GaussianNB() # Instanciamos el clasificador naive Bayes
-  naive_bayes_classifier.fit(X_train, y_train)
-  y_pred = naive_bayes_classifier.predict(X_test)
-  accuracy = accuracy_score(y_test, y_pred)
-  print("Naive Bayes: \nAccuracy: ", accuracy)
+    X_train, X_test, y_train, y_test = division_datos_entrenamiento_prueba() 
+    naive_bayes_classifier = GaussianNB() 
+    
+    # Validación cruzada con 5 folds
+    accuracy = cross_val_score(naive_bayes_classifier, X_train, y_train, cv=5, scoring='accuracy').mean()
+    print("Clasificador Naive Bayes - Validación Cruzada - Accuracy Promedio:", accuracy)
+    
+    naive_bayes_classifier.fit(X_train, y_train)
+    y_pred = naive_bayes_classifier.predict(X_test)
+    accuracy_test = accuracy_score(y_test, y_pred)
+    print("Accuracy en datos de prueba:", accuracy_test)
   
 
 def main(): 
-  global mydata
-  prepracion_datos()
-  clasificador_KNN()
-  arbol_clasificacion()
-  clasificador_naive_bayes()
+    global mydata
+    prepracion_datos()
+    clasificador_KNN()
+    arbol_clasificacion()
+    clasificador_naive_bayes()
 
-
-main(); # Llamamos a la función principal
+main()
