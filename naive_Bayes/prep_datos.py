@@ -13,7 +13,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
@@ -170,13 +170,12 @@ def clasificador_KNN():
 
 # FUnción para implementar el clasificador de árbol de clasificación
 def arbol_clasificacion(): 
-  X_train, X_test, y_train, y_test = division_datos_entrenamiento_prueba()  # Dividimos los datos en conjuntos de entrenamiento y prueba. IMPORTANTE, estamos manteniendo la proporción de clases.
-  tree_classifier = DecisionTreeClassifier(random_state=42) # Instanciamos el clasificador de árbol de decisión
-  # scores = cross_val_score(tree_classifier, X_train, y_train, cv=5)  # Utilizamos validación cruzada con 5 folds
-  tree_classifier.fit(X_train, y_train) # Entrenamos
-  y_pred = tree_classifier.predict(X_test) # Predecimos
+  X_train, X_test, y_train, y_test = division_datos_entrenamiento_prueba()  
+  rf_classifier = RandomForestClassifier(n_estimators=100, random_state=42) # Utilizamos 100 árboles en el bosque
+  rf_classifier.fit(X_train, y_train) # Entrenamos
+  y_pred = rf_classifier.predict(X_test) # Predecimos
   accuracy = accuracy_score(y_test, y_pred) # Evaluamos el rendimiento
-  print("Arbol Clasificación: \nAccuracy:", accuracy) 
+  print("Random Forest Clasificación: \nAccuracy:", accuracy) 
 
 
 # Función para implementar el clasificador naive Bayes. Utilizamos la versión que permite utilizar variables categóricas.

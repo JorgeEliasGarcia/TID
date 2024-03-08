@@ -13,10 +13,12 @@ from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, classification_report
-from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import AdaBoostClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import cross_val_score
 from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
+from sklearn.naive_bayes import BernoulliNB
 
 # Variable global para los datos
 mydata = pd.read_csv("../homeLoanAproval.csv")
@@ -75,7 +77,7 @@ def identificar_variables_validas_para_agrupacion():
 # Hacemos la agrupación en clusters, haciendo uso del algoritmo kMeans. 
 def hacer_agrupacion_clusters(selected_columns):
   grouped_data = mydata[selected_columns]   # Agrupar por las columnas seleccionadas
-  kmeans = KMeans(n_clusters=8, random_state=42)  #  Aplicamos kMeans, usando 15 clusters
+  kmeans = KMeans(n_clusters=7, random_state=42)  #  Aplicamos kMeans, usando 15 clusters
   kmeans.fit(grouped_data)
   mydata['Cluster'] = kmeans.labels_   # Asignamos clusters a cada fila en el DataFrame original
   return grouped_data
@@ -150,64 +152,69 @@ pipeline = ColumnTransformer(
     ], 
 )
 
-
-# Función para la división de los datos en entrenamiento y prueba
+# Función para la división de los datos
 def division_datos_entrenamiento_prueba(): 
-    no_loan_status = mydata.drop("LoanStatus", axis=1)
-    preprocessed_dataset = pipeline.fit_transform(no_loan_status)
-    X = preprocessed_dataset
-    y = mydata["LoanStatus"]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    return X_train, X_test, y_train, y_test
+  no_loan_status = mydata.drop("LoanStatus", axis=1)
+  preprocessed_dataset = pipeline.fit_transform(no_loan_status)
+  X_train, X_test, y_train, y_test = train_test_split ( preprocessed_dataset, mydata["LoanStatus"], test_size=0.2, random_state=42 )
+  return X_train, X_test, y_train, y_test
 
-# Función para implementar el clasificador k-NN con validación cruzada
+
+# Función para implementar el clasificador k-NN
 def clasificador_KNN():
+  X_train, X_test, y_train, y_test = division_datos_entrenamiento_prueba()  # Dividimos los datos en conjuntos de entrenamiento y prueba. IMPORTANTE, estamos manteniendo la proporción de clases. 
+  knn_classifier = KNeighborsClassifier(n_neighbors=10)   # Instanciar el clasificador KNN
+  knn_classifier.fit(X_train, y_train)   # Instanciamos y entrenamos el clasificador KNN
+  y_pred = knn_classifier.predict(X_test)   # Predecir las etiquetas en el conjunto de prueba
+  accuracy = accuracy_score(y_test, y_pred)  # Evaluamos el rendimiento del clasificador
+  print("Claisificador KNN: \nAccuracy:", accuracy)
+
+
+# Función para implementar el clasificador de Random Forest
+def random_forest_clasificacion(): 
+  X_train, X_test, y_train, y_test = division_datos_entrenamiento_prueba()  
+  rf_classifier = RandomForestClassifier(n_estimators=100, random_state=42) # Utilizamos 100 árboles en el bosque
+  rf_classifier.fit(X_train, y_train) # Entrenamos
+  y_pred = rf_classifier.predict(X_test) # Predecimos
+  accuracy = accuracy_score(y_test, y_pred) # Evaluamos el rendimiento
+  print("Random Forest Clasificación: \nAccuracy:", accuracy) 
+
+# Función para implementar el clasificador AdaBoost
+def adaboost_clasificacion(): 
     X_train, X_test, y_train, y_test = division_datos_entrenamiento_prueba()  
-    knn_classifier = KNeighborsClassifier(n_neighbors=10)
-    
-    # Validación cruzada con 5 folds
-    accuracy = cross_val_score(knn_classifier, X_train, y_train, cv=5, scoring='accuracy').mean()
-    print("Clasificador KNN - Validación Cruzada - Accuracy Promedio:", accuracy)
-    
-    knn_classifier.fit(X_train, y_train) 
-    y_pred = knn_classifier.predict(X_test)  
-    accuracy_test = accuracy_score(y_test, y_pred) 
-    print("Accuracy en datos de prueba:", accuracy_test)
+    adaboost_classifier = AdaBoostClassifier(n_estimators=100, random_state=42) # Utilizamos 100 clasificadores débiles
+    adaboost_classifier.fit(X_train, y_train) # Entrenamos
+    y_pred = adaboost_classifier.predict(X_test) # Predecimos
+    accuracy = accuracy_score(y_test, y_pred) # Evaluamos el rendimiento
+    print("AdaBoost Clasificación: \nAccuracy:", accuracy) 
 
-# Función para implementar el clasificador de árbol de clasificación con validación cruzada
-def arbol_clasificacion(): 
-    X_train, X_test, y_train, y_test = division_datos_entrenamiento_prueba()
-    tree_classifier = DecisionTreeClassifier(random_state=42)
-    
-    # Validación cruzada con 5 folds
-    accuracy = cross_val_score(tree_classifier, X_train, y_train, cv=5, scoring='accuracy').mean()
-    print("Árbol de Clasificación - Validación Cruzada - Accuracy Promedio:", accuracy)
-    
-    tree_classifier.fit(X_train, y_train)
-    y_pred = tree_classifier.predict(X_test)
-    accuracy_test = accuracy_score(y_test, y_pred)
-    print("Accuracy en datos de prueba:", accuracy_test) 
-
-# Función para implementar el clasificador naive Bayes con validación cruzada
+# Función para implementar el clasificador naive Bayes. Utilizamos la versión que permite utilizar variables categóricas.
 def clasificador_naive_bayes(): 
-    X_train, X_test, y_train, y_test = division_datos_entrenamiento_prueba() 
-    naive_bayes_classifier = GaussianNB() 
-    
-    # Validación cruzada con 5 folds
-    accuracy = cross_val_score(naive_bayes_classifier, X_train, y_train, cv=5, scoring='accuracy').mean()
-    print("Clasificador Naive Bayes - Validación Cruzada - Accuracy Promedio:", accuracy)
-    
-    naive_bayes_classifier.fit(X_train, y_train)
-    y_pred = naive_bayes_classifier.predict(X_test)
-    accuracy_test = accuracy_score(y_test, y_pred)
-    print("Accuracy en datos de prueba:", accuracy_test)
+  X_train, X_test, y_train, y_test = division_datos_entrenamiento_prueba() 
+  naive_bayes_classifier = GaussianNB() # Instanciamos el clasificador naive Bayes
+  naive_bayes_classifier.fit(X_train, y_train)
+  y_pred = naive_bayes_classifier.predict(X_test)
+  accuracy = accuracy_score(y_test, y_pred)
+  print("Naive Bayes: \nAccuracy: ", accuracy)
   
+  
+# Función para implementar el clasificador Bernoulli Naive Bayes
+def bernoulli_naive_bayes(): 
+    X_train, X_test, y_train, y_test = division_datos_entrenamiento_prueba() 
+    bernoulli_nb_classifier = BernoulliNB() # Instanciamos el clasificador Bernoulli Naive Bayes
+    bernoulli_nb_classifier.fit(X_train, y_train)
+    y_pred = bernoulli_nb_classifier.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    print("Bernoulli Naive Bayes: \nAccuracy: ", accuracy)
+
 
 def main(): 
-    global mydata
-    prepracion_datos()
-    clasificador_KNN()
-    arbol_clasificacion()
-    clasificador_naive_bayes()
+  global mydata
+  prepracion_datos()
+  clasificador_KNN()
+  random_forest_clasificacion()
+  clasificador_naive_bayes()
 
-main()
+
+
+main(); # Llamamos a la función principal
