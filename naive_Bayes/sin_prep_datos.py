@@ -28,7 +28,7 @@ def cambios_de_tipo():
   mydata['Dependents'] = pd.to_numeric(mydata['Dependents']) # Convertir la columna a tipo numérico
   mydata['Married'] = mydata['Married'] == "Yes"  # Married será de tipo boolean. Casado o No.
   mydata['SelfEmployed'] = mydata['SelfEmployed'] == "Yes" # Cambiamos SelfEmployed también a tipo boolean.
-  # mydata['LoanStatus'] = mydata['LoanStatus'] == "Y"  # LoanStatus también será de tipo boolean. Aprobado o No. 
+ # mydata['LoanStatus'] = mydata['LoanStatus'] == "Y"  # LoanStatus también será de tipo boolean. Aprobado o No. 
   
 
 
@@ -36,7 +36,7 @@ def cambios_de_tipo():
 def detectar_y_eliminar_outliers(data, contamination = 0.05): # Esperamos que aproximadamente el 5% de los datos sean outliers. 
   data_numeric = data.select_dtypes(include=[float, int])  # Seleccionamos solo columnas numéricas, para el análisis de outliers. 
   data_no_nulls = data_numeric.dropna()   # Guardamos una copia de los datos con valores no nulos. No eliminamos filas con nulos, más tarde les imputaremos un valor.
-  modelo_iforest = IsolationForest(contamination=contamination, random_state=42)  
+  modelo_iforest = IsolationForest(contamination=contamination)  
   modelo_iforest.fit(data_no_nulls)   # Entrenamos el modelo
   predicciones = modelo_iforest.predict(data_no_nulls)  # Predicción de outliers
   outliers_indices = data_no_nulls[predicciones == -1].index  # Índices de los outliers detectados
@@ -73,7 +73,7 @@ def identificar_variables_validas_para_agrupacion():
 # Hacemos la agrupación en clusters, haciendo uso del algoritmo kMeans. 
 def hacer_agrupacion_clusters(selected_columns):
   grouped_data = mydata[selected_columns]   # Agrupar por las columnas seleccionadas
-  kmeans = KMeans(n_clusters=5, random_state=42)  #  Aplicamos kMeans, usando 15 clusters
+  kmeans = KMeans(n_clusters=10)  #  Aplicamos kMeans, usando 15 clusters
   kmeans.fit(grouped_data)
   mydata['Cluster'] = kmeans.labels_   # Asignamos clusters a cada fila en el DataFrame original
   return grouped_data
@@ -112,16 +112,15 @@ def tratamiento_valores_nulos():
 
 # Comprobamos si las clases están correctamente balanceadas
 def diferencia_balance_clases():
-  approved_loans = len(mydata[mydata["LoanStatus"] == "Y"])
-  not_approved_loans = len(mydata[mydata["LoanStatus"] == "N"])
+  approved_loans = len(mydata[mydata["LoanStatus"] == "Yes"])
+  not_approved_loans = len(mydata[mydata["LoanStatus"] == "No"])
   return (abs(approved_loans - not_approved_loans))
 
 
 # Función para balancear las clases. Para ello, añadiremos más filas con la clase menos representada, usando el algoritmo SMOTE. 
 def balancear_clases(): 
   global mydata 
-  if (diferencia_balance_clases() > len(mydata) * 0.2): # Comprobamos si están desbalanceadas. Si la diferencia es mayor al 20% del total de filas
-    print("entree")
+  if (diferencia_balance_clases() > len(mydata) * 0.3): # Comprobamos si están desbalanceadas. Si la diferencia es mayor al 30% del total de filas
     X = mydata.drop("LoanStatus", axis=1)  # Características
     y = mydata["LoanStatus"]  # Etiquetas
     categorical_indices = [i for i, col in enumerate(X.columns) if X[col].dtype == 'object']  # Obtenemos los índices de columnas categóricas
@@ -191,7 +190,7 @@ def clasificador_naive_bayes():
 
 def main(): 
   global mydata
-  prepracion_datos()
+  mydata.dropna()
   clasificador_KNN()
   arbol_clasificacion()
   clasificador_naive_bayes()
